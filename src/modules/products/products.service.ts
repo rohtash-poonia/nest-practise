@@ -35,35 +35,39 @@ export class ProductsService {
     return this.products.find((product) => product.id === id);
   }
 
-  createProduct(product: { name: string; price: number }) {
-    const newProduct = {
-      id: this.products.length + 1,
-      ...product,
-    };
-
-    this.products.push(newProduct);
-    return newProduct;
-  }
-
-  updateProduct(id: number, data: { name?: string; price?: number }) {
+  updateProduct(
+    id: number,
+    data: {
+      name?: string;
+      price?: number;
+    },
+  ) {
     const product = this.products.find((p) => p.id === id);
 
     if (!product) {
-      return { message: 'Product not found' };
+      return {
+        message: 'Product not found',
+      };
     }
 
-    Object.assign(product, data);
+    if (data.name !== undefined) {
+      product.name = data.name;
+    }
+
+    if (data.price !== undefined) {
+      product.price = data.price;
+    }
 
     return product;
   }
 
   deleteProduct(id: number) {
-  const index = this.products.findIndex(p => p.id === id);
+    const index = this.products.findIndex((p) => p.id === id);
 
-  if (index === -1) {
-    return { message: 'Product not found' };
+    if (index === -1) {
+      return { message: 'Product not found' };
+    }
+
+    return this.products.splice(index, 1)[0];
   }
-
-  return this.products.splice(index, 1)[0];
-}
 }
