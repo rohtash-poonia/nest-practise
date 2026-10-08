@@ -1,7 +1,5 @@
-import { Body, Controller, Delete, Get, Patch, Post, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { ProductsService } from './products.service.js';
-import type { GetProductsByIdRequest } from './types/product.types.js';
 
 @Controller('products')
 export class ProductsController {
@@ -13,30 +11,31 @@ export class ProductsController {
   }
 
   @Get(':id')
-  getProductsById(@Req() req: GetProductsByIdRequest, @Res() res: Response) {
-    return this.productsService.getProductsId(req.body.id);
+  getProductsById(@Param('id') id: string) {
+    return this.productsService.getProductsId(id);
   }
   @Post()
   createProduct(@Body() product: { name: string; price: number }) {
     return this.productsService.createProduct(product);
   }
-  @Patch('update')
+  @Patch(':id')
   updateProduct(
+    @Param('id') id: string,
     @Body()
     body: {
-      id: number;
       name?: string;
       price?: number;
     },
   ) {
-    return this.productsService.updateProduct(body.id, {
+    return this.productsService.updateProduct(id, {
       name: body.name,
       price: body.price,
     });
   }
-   @Delete('delete')
-  deleteProduct(@Body() body: { id: number }) {
-    return this.productsService.deleteProduct(body.id);
+  @HttpCode(HttpStatus.OK)
+  @Delete(':id')
+  deleteProduct(@Param('id') id: string) {
+    return this.productsService.deleteProduct(id);
   }
 
   

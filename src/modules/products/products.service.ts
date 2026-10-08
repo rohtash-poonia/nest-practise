@@ -35,8 +35,18 @@ export class ProductsService {
     return this.products.find((product) => product.id === id);
   }
 
+  createProduct(data: { name: string; price: number }) {
+    const newProduct = {
+      id: String(this.products.length + 1),
+      name: data.name,
+      price: data.price,
+    };
+    this.products.push(newProduct);
+    return newProduct;
+  }
+
   updateProduct(
-    id: number,
+    id: string,
     data: {
       name?: string;
       price?: number;
@@ -61,7 +71,7 @@ export class ProductsService {
     return product;
   }
 
-  deleteProduct(id: number) {
+  deleteProduct(id: string) {
     const index = this.products.findIndex((p) => p.id === id);
 
     if (index === -1) {
