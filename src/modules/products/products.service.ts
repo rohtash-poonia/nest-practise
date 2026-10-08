@@ -44,4 +44,26 @@ export class ProductsService {
     this.products.push(newProduct);
     return newProduct;
   }
+
+  updateProduct(id: number, data: { name?: string; price?: number }) {
+    const product = this.products.find((p) => p.id === id);
+
+    if (!product) {
+      return { message: 'Product not found' };
+    }
+
+    Object.assign(product, data);
+
+    return product;
+  }
+
+  deleteProduct(id: number) {
+  const index = this.products.findIndex(p => p.id === id);
+
+  if (index === -1) {
+    return { message: 'Product not found' };
+  }
+
+  return this.products.splice(index, 1)[0];
+}
 }
