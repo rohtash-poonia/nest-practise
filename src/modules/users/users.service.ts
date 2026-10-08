@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
+
 export class UsersService {
-  getUser() {
-    return {
+ dummmyUsers = [
+    {
       id: 1,
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-    };
-  }
+      name: 'rohtash poonia',
+      email: 'rohtash.poonia@example.com'
+    }
+ ]
 }

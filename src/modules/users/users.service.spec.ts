@@ -15,12 +15,4 @@ describe('UsersService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
-
-  it('returns a dummy user', () => {
-    expect(service.getUser()).toEqual({
-      id: 1,
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-    });
-  });
 });
