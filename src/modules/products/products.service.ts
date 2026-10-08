@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { productType } from './types/product.types.js';
 
 @Injectable()
 export class ProductsService {
@@ -32,5 +33,15 @@ export class ProductsService {
 
   getProductsId(id: string) {
     return this.products.find((product) => product.id === id);
+  }
+
+  createProduct(product: { name: string; price: number }) {
+    const newProduct = {
+      id: this.products.length + 1,
+      ...product,
+    };
+
+    this.products.push(newProduct);
+    return newProduct;
   }
 }

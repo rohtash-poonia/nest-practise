@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { ProductsService } from './products.service.js';
 import type { GetProductsByIdRequest } from './types/product.types.js';
@@ -15,5 +15,9 @@ export class ProductsController {
   @Get(':id')
   getProductsById(@Req() req: GetProductsByIdRequest, @Res() res: Response) {
     return this.productsService.getProductsId(req.body.id);
+  }
+  @Post()
+  createProduct(@Body() product: { name: string; price: number }) {
+    return this.productsService.createProduct(product);
   }
 }
