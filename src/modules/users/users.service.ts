@@ -1,17 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
 export class UsersService {
-  dummmyUsers = [
-    {
-      id: 1,
-      name: 'rohtash poonia',
-      email: 'rohtash.poonia@example.com',
-    },
-    {
-      id: 2,
-      name: 'DEVESH DUHAN',
-      email: 'devesh.duhan@example.com',
-    },
-  ];
+  constructor(readonly prismaService: PrismaService) {}
+
+  async createUser(transactionId: string, utr: string) {
+    if (!transactionId) {
+      throw new BadRequestException('transactionId is required');
+    }
+    if (!utr) {
+      throw new BadRequestException('utr is required');
+    }
+
+    const newRecord = await this.prismaService.gunjan.create({
+      data: { transactionId, utr },
+    });
+
+    return newRecord;
+  }
 }
