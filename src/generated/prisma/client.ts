@@ -46,3 +46,8 @@ export { Prisma }
  * 
  */
 export type gunjan = Prisma.gunjanModel
+/**
+ * Model User
+ * 
+ */
+export type User = Prisma.UserModel
