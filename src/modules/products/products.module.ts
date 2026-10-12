@@ -7,4 +7,5 @@ export class ProductsModule {
     imports: []
     controllers: [ProductsController]
     providers: [ProductsService]
+    
 }
