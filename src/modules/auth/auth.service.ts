@@ -1,4 +1,9 @@
-import {Injectable,ConflictException,BadRequestException, UnauthorizedException,} from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { JwtService } from '@nestjs/jwt';
@@ -95,7 +100,13 @@ export class AuthService {
       sub: user.id,
       tokenVersion: user.tokenVersion,
     });
-
+    // Save JWT in cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
     return {
       message: 'Login successful',
       token,
