@@ -1,15 +1,14 @@
-import {
-  Injectable,
-  ConflictException,
-  BadRequestException,
-} from '@nestjs/common';
-
+import {Injectable,ConflictException,BadRequestException, UnauthorizedException,} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async register(dto: {
     username: string;
@@ -57,6 +56,54 @@ export class AuthService {
     return {
       message: 'User registered successfully',
       user,
+    };
+  }
+  async login(dto: { email: string; password: string }) {
+    const { email, password } = dto;
+
+    if (!email || !password) {
+      throw new BadRequestException('Email and password are required');
+    }
+
+    // Find user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        username: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+        passwordHash: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Generate JWT token
+    const token = await this.jwtService.signAsync({
+      sub: user.id,
+    });
+
+    return {
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+      },
     };
   }
 }

@@ -616,6 +616,9 @@ export type GunjanScalarFieldEnum = (typeof GunjanScalarFieldEnum)[keyof typeof 
 
 export const UserScalarFieldEnum = {
   id: 'id',
+  username: 'username',
+  firstname: 'firstname',
+  lastname: 'lastname',
   email: 'email',
   passwordHash: 'passwordHash',
   createdAt: 'createdAt'

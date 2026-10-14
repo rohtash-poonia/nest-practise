@@ -19,4 +19,14 @@ export class AuthController {
   ) {
     return this.authService.register(body);
   }
+  @Post('login')
+  login(
+    @Body()
+    body: {
+      email: string;
+      password: string;
+    },
+  ) {
+    return this.authService.login(body);
+  }
 }
