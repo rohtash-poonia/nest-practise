@@ -6,19 +6,21 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
+import type { JwtPayload } from 'jsonwebtoken';
 import { PrismaService } from '../prisma/prisma.service.js';
-// import { User, UserDocument } from '../schemas/user.schema';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
-    // @InjectModel(User.name) private readonly userModel: Model,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<{
+      headers: { authorization?: string };
+      user?: { id: string };
+    }>();
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -27,7 +29,12 @@ export class JwtAuthGuard implements CanActivate {
       );
     }
 
-    const token = authHeader.split(' ')[1];
+    const [scheme, token, ...extraParts] = authHeader.split(' ');
+    if (scheme !== 'Bearer' || !token || extraParts.length > 0) {
+      throw new UnauthorizedException(
+        'Missing or invalid authorization header',
+      );
+    }
     const secret = this.configService.get<string>('JWT_SECRET');
 
     if (!secret) {
@@ -37,31 +44,35 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const decoded = jwt.verify(token, secret) as any;
-      if (!decoded || !decoded.sub) {
+      const decoded = jwt.verify(token, secret);
+      if (
+        typeof decoded === 'string' ||
+        !decoded.sub ||
+        typeof decoded.tokenVersion !== 'number'
+      ) {
         throw new UnauthorizedException('Invalid token structure');
-      } // Look up user in the shared database using decoded.sub (user ID)
+      }
 
       const user = await this.prisma.user.findUnique({
-        where: { id: decoded.id },
+        where: { id: decoded.sub },
       });
       if (!user) {
         throw new UnauthorizedException('User not found in database');
-      } // Attach user to request object
+      }
+      if (user.tokenVersion !== decoded.tokenVersion) {
+        throw new UnauthorizedException('Authentication token has been revoked');
+      }
 
-      request.user = user;
+      request.user = { id: user.id };
       return true;
-    } catch (error: any) {
-      console.error(
-        '[JWT-GUARD-DEBUG] Token validation failed:',
-        error.message || error,
-      );
+    } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      throw new UnauthorizedException(
-        `Invalid or expired authentication token: ${error.message || String(error)}`,
-      );
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new UnauthorizedException('Invalid or expired authentication token');
+      }
+      throw error;
     }
   }
 }

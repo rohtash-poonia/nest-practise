@@ -75,6 +75,7 @@ export class AuthService {
         lastname: true,
         email: true,
         passwordHash: true,
+        tokenVersion: true,
       },
     });
 
@@ -92,6 +93,7 @@ export class AuthService {
     // Generate JWT token
     const token = await this.jwtService.signAsync({
       sub: user.id,
+      tokenVersion: user.tokenVersion,
     });
 
     return {
@@ -105,5 +107,14 @@ export class AuthService {
         email: user.email,
       },
     };
+  }
+
+  async logout(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { tokenVersion: { increment: 1 } },
+    });
+
+    return { message: 'Logout successful' };
   }
 }

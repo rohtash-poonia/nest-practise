@@ -1,60 +1,92 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import { Prisma } from '../../generated/prisma/client.js';
+import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service.js';
 
 describe('AuthService', () => {
+  const userFindFirst = vi.fn();
   const userCreate = vi.fn();
-  const service = new AuthService({
-    user: { create: userCreate },
-  } as never);
+  const service = new AuthService(
+    {
+      user: { findFirst: userFindFirst, create: userCreate },
+    } as never,
+    {} as never,
+  );
 
   beforeEach(() => {
+    userFindFirst.mockReset();
     userCreate.mockReset();
+    userFindFirst.mockResolvedValue(null);
   });
 
-  it('creates a normalized user without returning the password hash', async () => {
+  it('creates a user with a hashed password and does not return the hash', async () => {
+    const dto = {
+      username: 'person',
+      firstname: 'Test',
+      lastname: 'User',
+      email: 'person@example.com',
+      password: 'a-secure-password',
+    };
     const user = {
       id: 'user-id',
+      username: dto.username,
+      firstname: dto.firstname,
+      lastname: dto.lastname,
       email: 'person@example.com',
       createdAt: new Date(),
     };
     userCreate.mockResolvedValue(user);
 
-    await expect(
-      service.register(' Person@Example.com ', 'a-secure-password'),
-    ).resolves.toEqual(user);
+    await expect(service.register(dto)).resolves.toEqual({
+      message: 'User registered successfully',
+      user,
+    });
 
     const createArgs = userCreate.mock.calls[0][0];
-    expect(createArgs.data.email).toBe('person@example.com');
-    expect(createArgs.data.passwordHash).toMatch(/^scrypt\$[a-f0-9]+\$[a-f0-9]+$/);
-    expect(createArgs.data.passwordHash).not.toContain('a-secure-password');
+    expect(createArgs.data).toMatchObject({
+      username: dto.username,
+      firstname: dto.firstname,
+      lastname: dto.lastname,
+      email: dto.email,
+    });
+    await expect(
+      bcrypt.compare(dto.password, createArgs.data.passwordHash),
+    ).resolves.toBe(true);
     expect(createArgs.select).toEqual({
       id: true,
+      username: true,
+      firstname: true,
+      lastname: true,
       email: true,
       createdAt: true,
     });
   });
 
   it('rejects invalid input before accessing the database', async () => {
-    await expect(service.register('not-an-email', 'password123')).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
-    await expect(service.register('person@example.com', 'short')).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      service.register({
+        username: '',
+        firstname: 'Test',
+        lastname: 'User',
+        email: 'person@example.com',
+        password: 'a-secure-password',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(userFindFirst).not.toHaveBeenCalled();
     expect(userCreate).not.toHaveBeenCalled();
   });
 
-  it('returns a conflict when the email is already registered', async () => {
-    userCreate.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
-        code: 'P2002',
-        clientVersion: 'test',
-      }),
-    );
+  it('returns a conflict when the email or username is already registered', async () => {
+    userFindFirst.mockResolvedValue({ id: 'existing-user' });
 
     await expect(
-      service.register('person@example.com', 'a-secure-password'),
+      service.register({
+        username: 'person',
+        firstname: 'Test',
+        lastname: 'User',
+        email: 'person@example.com',
+        password: 'a-secure-password',
+      }),
     ).rejects.toBeInstanceOf(ConflictException);
+    expect(userCreate).not.toHaveBeenCalled();
   });
 });
