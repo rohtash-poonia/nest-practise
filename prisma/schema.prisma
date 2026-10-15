@@ -23,3 +23,11 @@ model User {
   tokenVersion Int      @default(0)
   createdAt    DateTime @default(now())
 }
+
+model Otp {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  otp       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
